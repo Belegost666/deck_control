@@ -45,9 +45,19 @@ let gameState = {
 };
 
 // ==========================================
-// 3. INITIALISATION & MÉLANGE
+// 3. FONCTION DE LANCEMENT (DEPUIS L'ACCUEIL)
 // ==========================================
-function initGame() {
+function startGame() {
+    // Masquer doucement l'écran d'accueil
+    const welcomeScreen = document.getElementById('welcome-screen');
+    welcomeScreen.style.opacity = '0';
+    welcomeScreen.style.transform = 'scale(1.05)';
+    
+    setTimeout(() => {
+        welcomeScreen.style.display = 'none';
+    }, 400);
+
+    // Initialisation forcée des valeurs
     gameState.energy = 0;
     gameState.temperature = 30;
     gameState.manaMax = 8;
@@ -72,35 +82,29 @@ function shuffleArray(array) {
 }
 
 // ==========================================
-// 4. LOGIQUE DE TIRAGE & RÈGLE DU RETOUR
+// 4. LOGIQUE DE TIRAGE & REINJECTION
 // ==========================================
 function drawRound() {
-    // Si le paquet est vide, on rassemble et remélange
     if (gameState.deck.length < 2) {
         rebuildAndShuffleDeck();
     }
 
-    // On sort deux cartes physiques du paquet
     gameState.currentOptions = [gameState.deck.pop(), gameState.deck.pop()];
 
-    // Détection d'un piège automatique (Malus)
     const malusCard = gameState.currentOptions.find(card => card.type === 'malus');
 
     if (malusCard) {
-        // La carte non choisie est immédiatement réinjectée et mélangée dans le paquet
         const nonChosenCard = gameState.currentOptions.find(card => card.id !== malusCard.id);
         if (nonChosenCard) {
             gameState.deck.push(nonChosenCard);
             shuffleArray(gameState.deck);
         }
 
-        // Fixer le choix sur le piège seul
         gameState.currentOptions = [malusCard];
         renderCards(true);
         
         document.getElementById('game-instruction').innerHTML = "⚠️ SÉCURITÉ VIOLÉE : PIÈGE AUTOMATIQUE !";
         
-        // Auto-déclenchement après 2 secondes d'angoisse
         setTimeout(() => {
             executeCard(malusCard);
         }, 2000);
@@ -111,7 +115,7 @@ function drawRound() {
 }
 
 // ==========================================
-// 5. AFFICHAGE DES CARTES À L'ÉCRAN
+// 5. AFFICHAGE DES CARTES
 // ==========================================
 function renderCards(isMalusForced) {
     const container = document.getElementById('cards-container');
@@ -150,21 +154,18 @@ function renderCards(isMalusForced) {
 }
 
 // ==========================================
-// 6. ACTION & CHRONO DE SESSION
+// 6. EXECUTION & COMPTEUR
 // ==========================================
 function executeCard(card) {
-    // RÈGLE DE FLUX : Si choix manuel, la carte délaissée retourne dans la pioche
     if (gameState.currentOptions.length === 2) {
         const nonChosenCard = gameState.currentOptions.find(c => c.id !== card.id);
         gameState.deck.push(nonChosenCard);
         shuffleArray(gameState.deck);
     }
 
-    // Encaissement du coût
     gameState.mana -= card.cost;
     updateUI();
 
-    // Activation de l'overlay
     const timerScreen = document.getElementById('timer-screen');
     const countdownDisplay = document.getElementById('countdown-display');
     const activeTitle = document.getElementById('active-card-name');
@@ -194,21 +195,35 @@ function updateTimerDisplay(time, display) {
 }
 
 // ==========================================
-// 7. ENCAISSEMENT DES EFFETS & FIN DE PARTIE
+// 7. FIN DU CHRONO REEL OU SKIPPÉ
+// ==========================================
+function skipTimer() {
+    if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+    }
+    document.getElementById('timer-screen').classList.add('hidden');
+    
+    const activeTitle = document.getElementById('active-card-name').innerText;
+    const currentCard = DECK_INITIAL.find(c => c.title === activeTitle);
+    
+    if (currentCard) {
+        applyCardResults(currentCard);
+    }
+}
+
+// ==========================================
+// 8. RECOMPENSES ET PENALITES
 // ==========================================
 function applyCardResults(card) {
-    // 1. Énergie
     gameState.energy += card.energy;
 
-    // 2. Température (+ Protection Isolation)
     if (gameState.isTempFrozen && card.temp > 0) {
-        gameState.isTempFrozen = false; // Le bouclier absorbe l'effet et s'éteint
+        gameState.isTempFrozen = false; 
     } else {
         gameState.temperature += card.temp;
         if (gameState.temperature < 0) gameState.temperature = 0;
     }
 
-    // 3. Routage des effets complexes
     if (card.effect) {
         switch (card.effect) {
             case 'gain_mana_6':
@@ -232,7 +247,6 @@ function applyCardResults(card) {
 
     updateUI();
 
-    // 4. Verdict du Round
     if (gameState.temperature >= gameState.maxTemperature) {
         triggerGameOver(false);
     } else if (gameState.energy >= gameState.maxEnergy) {
@@ -243,24 +257,20 @@ function applyCardResults(card) {
 }
 
 // ==========================================
-// 8. SYNCHRONISATION DE L'INTERFACE
+// 9. RE-RENDU DE L'INTERFACE
 // ==========================================
 function updateUI() {
-    // Énergie
     document.getElementById('energy-val').innerText = gameState.energy;
     const energyPct = (gameState.energy / gameState.maxEnergy) * 100;
     document.getElementById('energy-bar').style.width = `${Math.min(energyPct, 100)}%`;
 
-    // Température
     document.getElementById('temp-val').innerText = gameState.temperature;
     const tempPct = (gameState.temperature / gameState.maxTemperature) * 100;
     const tempBar = document.getElementById('temp-bar');
     tempBar.style.width = `${Math.min(tempPct, 100)}%`;
     
-    // Alerte visuelle Cryo-bouclier
     tempBar.style.background = gameState.isTempFrozen ? 'var(--color-mana)' : 'var(--color-temp)';
 
-    // Perles de Mana
     document.getElementById('mana-val').innerText = gameState.mana;
     document.getElementById('mana-max').innerText = gameState.manaMax;
     
@@ -274,7 +284,7 @@ function updateUI() {
 }
 
 // ==========================================
-// 9. TERMINUS
+// 10. CONDITIONS DE FIN
 // ==========================================
 function triggerGameOver(isVictory) {
     const container = document.querySelector('.game-container');
@@ -303,5 +313,3 @@ function triggerGameOver(isVictory) {
         `;
     }
 }
-
-window.onload = initGame;
