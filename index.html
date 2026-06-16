@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Control - Deck Builder Tactique</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <header class="stats-header">
+            <div class="stat-box energy-group">
+                <div class="stat-label">Énergie <span id="energy-val">0</span>/15</div>
+                <div class="progress-bar-container">
+                    <div id="energy-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="stat-box temp-group">
+                <div class="stat-label">Température <span id="temp-val">30</span>°C</div>
+                <div class="progress-bar-container">
+                    <div id="temp-bar" class="progress-bar" style="width: 30%;"></div>
+                </div>
+            </div>
+
+            <div class="stat-box mana-group">
+                <div class="stat-label">Mana <span id="mana-val">8</span>/<span id="mana-max">8</span></div>
+                <div class="mana-dots" id="mana-dots-container"></div>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <p class="game-instruction" id="game-instruction">Chargement du protocole...</p>
+            <div class="cards-display" id="cards-container"></div>
+        </main>
+
+        <div class="overlay-timer hidden" id="timer-screen">
+            <h1 class="timer-card-title" id="active-card-name">-</h1>
+            <div class="countdown" id="countdown-display">00:00</div>
+            <p class="timer-warning">Masturbation en cours...</p>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
