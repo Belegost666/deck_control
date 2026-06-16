@@ -1,0 +1,238 @@
+:root {
+    --bg-color: #0d0f12;
+    --panel-color: #161a22;
+    --text-color: #e2e8f0;
+    --text-muted: #64748b;
+    
+    --color-mana: #06b6d4;      /* Cyan */
+    --color-energy: #10b981;    /* Vert */
+    --color-temp: #ef4444;      /* Rouge */
+    --color-malus: #f97316;     /* Orange */
+    --color-positif: #a855f7;   /* Violet */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+/* 📊 STATS (HAUT) */
+.stats-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: var(--panel-color);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+}
+
+.stat-label span {
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #222936;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease, background-color 0.3s ease;
+}
+
+.energy-group .progress-bar { background: var(--color-energy); }
+.temp-group .progress-bar { background: var(--color-temp); }
+
+.mana-dots {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.mana-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #222936;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mana-dot.active {
+    background: var(--color-mana);
+    box-shadow: 0 0 8px var(--color-mana);
+}
+
+/* 🎴 ECOSYSTEME DES CARTES (MILIEU) */
+.game-board {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.game-instruction {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.cards-display {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.card {
+    flex: 1;
+    background: var(--panel-color);
+    border: 1px solid #222936;
+    border-radius: 20px;
+    padding: 20px;
+    height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+}
+
+.card:hover:not(.disabled) {
+    transform: translateY(-5px);
+}
+
+.card.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.card-cost {
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.card-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.card-effect {
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-align: right;
+}
+
+/* VARIANTES */
+.card.surchauffe:hover:not(.disabled) { border-color: var(--color-temp); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.15); }
+.card.surchauffe .card-effect { color: var(--color-temp); }
+
+.card.refroidissement:hover:not(.disabled) { border-color: var(--color-mana); box-shadow: 0 10px 20px rgba(6, 182, 212, 0.15); }
+.card.refroidissement .card-effect { color: var(--color-mana); }
+
+.card.positif:hover:not(.disabled) { border-color: var(--color-positif); box-shadow: 0 10px 20px rgba(168, 85, 247, 0.15); }
+.card.positif .card-effect { color: var(--color-positif); }
+
+.card.malus {
+    border-color: var(--color-malus);
+    animation: pulse-malus 1.5s infinite ease-in-out;
+}
+.card.malus .card-effect { color: var(--color-malus); }
+
+@keyframes pulse-malus {
+    0% { box-shadow: 0 0 5px rgba(249, 115, 22, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
+    100% { box-shadow: 0 0 5px rgba(249, 115, 22, 0.2); }
+}
+
+/* ⏱️ OVERLAY TIMER */
+.overlay-timer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    z-index: 10;
+}
+
+.timer-card-title {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+}
+
+.countdown {
+    font-size: 5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -2px;
+}
+
+.timer-warning {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.hidden { display: none !important; }
