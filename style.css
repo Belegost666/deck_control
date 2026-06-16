@@ -28,6 +28,80 @@ body {
     overflow: hidden;
 }
 
+/* 🌐 ECRANS OVERLAYS (Accueil, Chrono, Fin) */
+.overlay-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.welcome-content {
+    text-align: center;
+    max-width: 380px;
+    padding: 20px;
+}
+
+.welcome-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    background: linear-gradient(45deg, var(--text-color), var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+}
+
+.welcome-subtitle {
+    font-size: 0.8rem;
+    color: var(--color-mana);
+    letter-spacing: 2px;
+    font-weight: 600;
+    margin-bottom: 40px;
+}
+
+.rules-box {
+    background: var(--panel-color);
+    border: 1px solid #222936;
+    padding: 20px;
+    border-radius: 16px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.95rem;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.start-btn {
+    background: var(--text-color);
+    color: var(--bg-color);
+    border: none;
+    padding: 16px 36px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.start-btn:hover {
+    background: var(--color-mana);
+    color: var(--text-color);
+    transform: scale(1.03);
+}
+
+/* 📱 CONTENEUR PRINCIPAL DU JEU */
 .game-container {
     width: 100%;
     max-width: 480px;
@@ -212,7 +286,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 30px;
+    gap: 20px;
     z-index: 10;
 }
 
@@ -233,6 +307,25 @@ body {
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 2px;
+}
+
+.skip-btn {
+    background: transparent;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s, border-color 0.2s;
+    margin-top: 10px;
+}
+
+.skip-btn:hover {
+    border-color: var(--text-color);
+    color: var(--text-color);
 }
 
 .hidden { display: none !important; }
