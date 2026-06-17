@@ -26,8 +26,13 @@ let gameState = {
     temperature: 30, maxTemperature: 100,
     mana: 15, manaMax: 15, isTempFrozen: false,
     deck: [], currentOptions: [], activeCard: null, timerInterval: null,
-    totalSessionSeconds: 0
+    totalSessionSeconds: 0,
+    streakType: null, streakCount: 0
 };
+
+const STREAK_THRESHOLD = 3;
+const STREAK_MANA_BONUS = 3;
+const STREAK_ENERGY_BONUS = 2;
 
 function startGame() {
     document.getElementById('start-screen').classList.add('hidden');
@@ -39,6 +44,8 @@ function startGame() {
     gameState.mana = 15;
     gameState.isTempFrozen = false;
     gameState.totalSessionSeconds = 0;
+    gameState.streakType = null;
+    gameState.streakCount = 0;
     
     rebuildDeck();
     updateUI();
@@ -201,6 +208,8 @@ function applyResults() {
         }
     }
 
+    let streakMessage = updateStreak(card);
+
     gameState.activeCard = null;
     updateUI();
 
@@ -210,7 +219,49 @@ function applyResults() {
         triggerEnd(true);
     } else {
         drawRound();
+        if (streakMessage) showStreakBanner(streakMessage);
     }
+}
+
+function updateStreak(card) {
+    // Seules les cartes surchauffe/refroidissement comptent pour le streak.
+    // Toute autre carte (positif/malus) interrompt le streak en cours.
+    if (card.type === 'surchauffe' || card.type === 'refroidissement') {
+        if (gameState.streakType === card.type) {
+            gameState.streakCount++;
+        } else {
+            gameState.streakType = card.type;
+            gameState.streakCount = 1;
+        }
+    } else {
+        gameState.streakType = null;
+        gameState.streakCount = 0;
+        return null;
+    }
+
+    if (gameState.streakCount >= STREAK_THRESHOLD) {
+        gameState.streakCount = 0; // reset après bonus pour repartir sur un nouveau streak
+        if (card.type === 'refroidissement') {
+            gameState.mana = Math.min(gameState.mana + STREAK_MANA_BONUS, gameState.manaMax);
+            return `❄️ Streak Glacial ! +${STREAK_MANA_BONUS} Mana`;
+        } else {
+            gameState.energy = Math.min(gameState.energy + STREAK_ENERGY_BONUS, gameState.maxEnergy);
+            return `🔥 Streak Brûlant ! +${STREAK_ENERGY_BONUS} Énergie`;
+        }
+    }
+    return null;
+}
+
+function showStreakBanner(message) {
+    const instruction = document.getElementById('game-instruction');
+    if (!instruction) return;
+    const previousText = instruction.innerText;
+    instruction.innerText = message;
+    instruction.classList.add('streak-flash');
+    setTimeout(() => {
+        instruction.classList.remove('streak-flash');
+        instruction.innerText = previousText;
+    }, 1600);
 }
 
 function formatTotalTime(totalSeconds) {
