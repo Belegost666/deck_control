@@ -3,33 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Control - Deck Builder Tactique</title>
+    <title>Cyber Control</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 🌐 ÉCRAN D'ACCUEIL (Lancé par défaut) -->
-    <div id="welcome-screen" class="overlay-screen">
-        <div class="welcome-content">
-            <h1 class="welcome-title">CYBER CONTROL</h1>
-            <p class="welcome-subtitle">PROTOCOLE DE RETENTION INTEGRAL</p>
-            
-            <div class="rules-box">
-                <p><strong>🎯 Objectif :</strong> Atteindre <span style="color: var(--color-energy);">15 points d'Énergie</span>.</p>
-                <p><strong>⚠️ Danger :</strong> Ne jamais atteindre <span style="color: var(--color-temp);">100°C</span> (Surchauffe).</p>
-                <p><strong>⚡ Règle :</strong> Gérez votre Mana. Les pièges s'activent automatiquement.</p>
-            </div>
-
-            <button class="start-btn" onclick="startGame()">Lancer le Protocole</button>
-        </div>
-    </div>
-
-    <!-- 📱 CONTENEUR PRINCIPAL DU JEU -->
     <div class="game-container">
         
-        <!-- 📊 SECTION 1 : LES JAUGES & STATS -->
         <header class="stats-header">
-            <!-- Jauge d'Énergie -->
             <div class="stat-box energy-group">
                 <div class="stat-label">Énergie <span id="energy-val">0</span>/15</div>
                 <div class="progress-bar-container">
@@ -37,7 +18,6 @@
                 </div>
             </div>
 
-            <!-- Jauge de Température -->
             <div class="stat-box temp-group">
                 <div class="stat-label">Température <span id="temp-val">30</span>°C</div>
                 <div class="progress-bar-container">
@@ -45,25 +25,29 @@
                 </div>
             </div>
 
-            <!-- Jauge de Mana -->
             <div class="stat-box mana-group">
-                <div class="stat-label">Mana <span id="mana-val">8</span>/<span id="mana-max">8</span></div>
+                <div class="stat-label">Mana <span id="mana-val">15</span>/<span id="mana-max">15</span></div>
                 <div class="mana-dots" id="mana-dots-container"></div>
             </div>
         </header>
 
-        <!-- 🎴 SECTION 2 : LA ZONE DES CARTES -->
-        <main class="game-board">
-            <p class="game-instruction" id="game-instruction">Initialisation...</p>
-            <div class="cards-display" id="cards-container"></div>
+        <main class="game-board" id="game-board">
+            <div id="start-screen">
+                <h1 style="font-size: 2rem; margin-bottom: 20px; text-align: center; letter-spacing: 2px;">CYBER CONTROL</h1>
+                <button class="menu-btn" onclick="startGame()">Lancer le jeu</button>
+            </div>
+            
+            <div id="play-screen" class="hidden" style="width: 100%;">
+                <p class="game-instruction" id="game-instruction">Sélectionnez une action :</p>
+                <div class="cards-display" id="cards-container"></div>
+            </div>
         </main>
 
-        <!-- ⏱️ SECTION 3 : LE CHRONO DE SESSION (Masqué par défaut) -->
         <div class="overlay-timer hidden" id="timer-screen">
             <h1 class="timer-card-title" id="active-card-name">-</h1>
             <div class="countdown" id="countdown-display">00:00</div>
             <p class="timer-warning">Masturbation en cours...</p>
-            <button id="skip-timer-btn" class="skip-btn" onclick="skipTimer()">Passer le chrono</button>
+            <button class="skip-btn" onclick="skipTimer()">Passer le chrono</button>
         </div>
 
     </div>
