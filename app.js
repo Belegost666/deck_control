@@ -13,7 +13,7 @@ const BASE_CARDS = [
     { type: 'refroidissement', title: 'Inertie Thermique', cost: 3, time: 300, energy: 2, temp: -30, effect: null },
     { type: 'refroidissement', title: 'Bain de Glace', cost: 1, time: 60, energy: 0, temp: -10, effect: null },
 
-    // ⚡ Positif / Générateurs (Présentes x1 — Seulement ces 4 cartes uniques)
+    // ⚡ Positif / Générateurs (Présentes x1)
     { type: 'positif', title: 'Puits de Mana', cost: 0, time: 180, energy: 1, temp: 30, effect: 'gain_mana_3' },
     { type: 'positif', title: 'Alchimie Interne', cost: 0, time: 300, energy: 2, temp: 50, effect: 'gain_mana_5' },
     { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 0, effect: 'geler_temp' },
@@ -30,7 +30,9 @@ let gameState = {
     energy: 0, maxEnergy: 15,
     temperature: 30, maxTemperature: 100,
     mana: 15, manaMax: 15, isTempFrozen: false,
-    deck: [], currentOptions: [], activeCard: null, timerInterval: null,
+    deck: [], 
+    hand: [], // Contient les 3 cartes actuelles du joueur
+    activeCard: null, timerInterval: null,
     totalSessionSeconds: 0,
     streakType: null, streakCount: 0
 };
@@ -51,10 +53,14 @@ function startGame() {
     gameState.totalSessionSeconds = 0;
     gameState.streakType = null;
     gameState.streakCount = 0;
+    gameState.hand = [];
     
     rebuildDeck();
     updateUI();
-    drawRound();
+    
+    // Remplir la main initiale avec 3 cartes valides
+    fillHand();
+    renderHand();
 }
 
 function rebuildDeck() {
@@ -62,12 +68,10 @@ function rebuildDeck() {
     let currentId = 1;
 
     BASE_CARDS.forEach(cardTemplate => {
-        // Seules les cartes Surchauffe et Refroidissement sont doublées (x2)
         if (cardTemplate.type === 'surchauffe' || cardTemplate.type === 'refroidissement') {
             newDeck.push({ ...cardTemplate, id: currentId++ });
             newDeck.push({ ...cardTemplate, id: currentId++ });
         } else {
-            // Les cartes Positif (4 uniques) et Malus (4 uniques) restent à un seul exemplaire (x1)
             newDeck.push({ ...cardTemplate, id: currentId++ });
         }
     });
@@ -77,6 +81,54 @@ function rebuildDeck() {
         [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
     }
     gameState.deck = newDeck;
+}
+
+// Pioche des cartes jusqu'à en avoir 3 en main. Si un malus est pioché, il s'applique immédiatement.
+function fillHand() {
+    while (gameState.hand.length < 3) {
+        if (gameState.deck.length === 0) rebuildDeck();
+        
+        let drawnCard = gameState.deck.pop();
+        
+        if (drawnCard.type === 'malus') {
+            applyMalusImmediately(drawnCard);
+            // Si le malus a causé une défaite, on arrête tout
+            if (gameState.temperature >= gameState.maxTemperature) return;
+        } else {
+            gameState.hand.push(drawnCard);
+        }
+    }
+}
+
+function applyMalusImmediately(card) {
+    // Applique directement les effets du piège
+    gameState.temperature += card.temp;
+    gameState.totalSessionSeconds += card.time;
+
+    if (card.effect === 'perte_mana_2') {
+        gameState.mana = Math.max(gameState.mana - 2, 0);
+    }
+
+    updateUI();
+    
+    // Alerte flash optionnelle pour notifier le joueur qu'un piège s'est déclenché
+    showMalusFlash(card);
+}
+
+function showMalusFlash(card) {
+    const instruction = document.getElementById('game-instruction');
+    if (!instruction) return;
+    
+    let detail = card.temp > 0 ? ` (+${card.temp}°C)` : '';
+    if (card.effect === 'perte_mana_2') detail += ' (-2 Mana)';
+
+    instruction.innerText = `⚠️ PIÈGE DÉCLENCHÉ : ${card.title}${detail} !`;
+    instruction.style.color = 'var(--color-malus)';
+    
+    setTimeout(() => {
+        instruction.innerText = "Sélectionnez votre action :";
+        instruction.style.color = '';
+    }, 2000);
 }
 
 function getEffectLabel(card) {
@@ -89,50 +141,31 @@ function getEffectLabel(card) {
         case 'gain_mana_5': return coreText + "⚡ +5 Mana";
         case 'geler_temp': return coreText + "❄️ Gèle Temp.";
         case 'perte_mana_2': return coreText + "❌ -2 Mana";
-        case 'perte_max_mana_1': return coreText + "📉 -1 Max Mana";
         default: return coreText;
     }
 }
 
-function drawRound() {
-    if (gameState.deck.length < 2) rebuildDeck();
-
-    gameState.currentOptions = [gameState.deck.pop(), gameState.deck.pop()];
-    const malusCard = gameState.currentOptions.find(c => c.type === 'malus');
-
-    if (malusCard) {
-        const nonChosen = gameState.currentOptions.find(c => c.id !== malusCard.id);
-        if (nonChosen) gameState.deck.push(nonChosen);
-        
-        gameState.currentOptions = [malusCard];
-        renderCards(true);
-        document.getElementById('game-instruction').innerText = "⚠️ PIÈGE ! Cliquez sur la carte pour la subir";
-    } else {
-        const canAffordAny = gameState.currentOptions.some(c => gameState.mana >= c.cost);
-        if (!canAffordAny && gameState.energy < gameState.maxEnergy) {
-            triggerEnd(false, "Panne sèche. Plus assez de mana pour continuer.");
-            return;
-        }
-
-        document.getElementById('game-instruction').innerText = "Sélectionnez votre action :";
-        renderCards(false);
+function renderHand() {
+    // Vérification de la condition de défaite par manque de mana avant d'afficher la main
+    const canAffordAny = gameState.hand.some(c => gameState.mana >= c.cost);
+    if (!canAffordAny && gameState.energy < gameState.maxEnergy) {
+        triggerEnd(false, "Panne sèche. Plus assez de mana pour jouer la moindre carte.");
+        return;
     }
-}
 
-function renderCards(isMalusForced) {
     const container = document.getElementById('cards-container');
     container.innerHTML = '';
 
-    gameState.currentOptions.forEach(card => {
+    gameState.hand.forEach(card => {
         const cardEl = document.createElement('div');
         const canAfford = gameState.mana >= card.cost;
-        cardEl.className = `card ${card.type} ${(!canAfford && !isMalusForced) ? 'disabled' : ''}`;
+        cardEl.className = `card ${card.type} ${!canAfford ? 'disabled' : ''}`;
 
         const min = Math.floor(card.time / 60);
         const sec = card.time % 60;
 
         cardEl.innerHTML = `
-            <div class="card-cost">${card.type === 'malus' ? '⚠️ DANGER' : card.cost + ' MANA'}</div>
+            <div class="card-cost">${card.cost} MANA</div>
             <h2 class="card-title">${card.title}</h2>
             <div class="card-stats">
                 <span>⏱️ ${min}:${sec < 10 ? '0' : ''}${sec}</span>
@@ -141,7 +174,7 @@ function renderCards(isMalusForced) {
             <div class="card-effect">${getEffectLabel(card)}</div>
         `;
 
-        if (isMalusForced || canAfford) {
+        if (canAfford) {
             cardEl.onclick = () => executeCard(card);
         }
         container.appendChild(cardEl);
@@ -151,10 +184,8 @@ function renderCards(isMalusForced) {
 function executeCard(card) {
     gameState.activeCard = card;
 
-    if (gameState.currentOptions.length === 2) {
-        const nonChosen = gameState.currentOptions.find(c => c.id !== card.id);
-        gameState.deck.push(nonChosen);
-    }
+    // Retire la carte jouée de la main
+    gameState.hand = gameState.hand.filter(c => c.id !== card.id);
 
     gameState.mana -= card.cost;
     gameState.totalSessionSeconds += card.time; 
@@ -209,16 +240,13 @@ function applyResults() {
         if (card.effect === 'gain_mana_3') gameState.mana += 3;
         if (card.effect === 'gain_mana_5') gameState.mana += 5;
         if (card.effect === 'geler_temp') gameState.isTempFrozen = true;
-        if (card.effect === 'perte_mana_2') gameState.mana = Math.max(gameState.mana - 2, 0);
-        if (card.effect === 'perte_max_mana_1') {
-            gameState.manaMax = Math.max(gameState.manaMax - 1, 1);
-            if (gameState.mana > gameState.manaMax) gameState.mana = gameState.manaMax; 
-        }
     }
 
     let streakMessage = updateStreak(card);
-
     gameState.activeCard = null;
+
+    // Remplir à nouveau la main à 3 cartes (déclenchera les malus s'il y en a)
+    fillHand();
     updateUI();
 
     if (gameState.temperature >= gameState.maxTemperature) {
@@ -226,7 +254,7 @@ function applyResults() {
     } else if (gameState.energy >= gameState.maxEnergy) {
         triggerEnd(true);
     } else {
-        drawRound();
+        renderHand();
         if (streakMessage) showStreakBanner(streakMessage);
     }
 }
