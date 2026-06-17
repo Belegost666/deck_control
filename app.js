@@ -1,10 +1,10 @@
 const BASE_CARDS = [
     // 🔥 Surchauffe (Présentes x2)
-    { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 3, temp: 10, effect: null },
-    { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 4, temp: 20, effect: null },
-    { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 180, energy: 5, temp: 30, effect: null },
-    { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 1, time: 30, energy: 2, temp: 10, effect: null },
-    { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 4, temp: 30, effect: null },
+    { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 3, temp: 40, effect: null },
+    { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 4, temp: 30, effect: null },
+    { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 240, energy: 5, temp: 10, effect: null },
+    { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 1, time: 30, energy: 2, temp: 50, effect: null },
+    { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 4, temp: 20, effect: null },
 
     // ❄️ Refroidissement (Présentes x2)
     { type: 'refroidissement', title: 'Contrôle Absolu', cost: 3, time: 240, energy: 1, temp: -20, effect: null },
