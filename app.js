@@ -149,7 +149,6 @@ function executeCard(card) {
     }
 
     gameState.mana -= card.cost;
-    // Ajout direct de l'intégralité du temps de la carte au compteur global dès sa validation
     gameState.totalSessionSeconds += card.time; 
     updateUI();
 
@@ -224,8 +223,6 @@ function applyResults() {
 }
 
 function updateStreak(card) {
-    // Seules les cartes surchauffe/refroidissement comptent pour le streak.
-    // Toute autre carte (positif/malus) interrompt le streak en cours.
     if (card.type === 'surchauffe' || card.type === 'refroidissement') {
         if (gameState.streakType === card.type) {
             gameState.streakCount++;
@@ -240,9 +237,10 @@ function updateStreak(card) {
     }
 
     if (gameState.streakCount >= STREAK_THRESHOLD) {
-        gameState.streakCount = 0; // reset après bonus pour repartir sur un nouveau streak
+        gameState.streakCount = 0; 
         if (card.type === 'refroidissement') {
-            gameState.mana = Math.min(gameState.mana + STREAK_MANA_BONUS, gameState.manaMax);
+            // Correction apportée ici : Autorise l'Overcap lors d'un Streak Glacial
+            gameState.mana += STREAK_MANA_BONUS; 
             return `❄️ Streak Glacial ! +${STREAK_MANA_BONUS} Mana`;
         } else {
             gameState.energy = Math.min(gameState.energy + STREAK_ENERGY_BONUS, gameState.maxEnergy);
