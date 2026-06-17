@@ -10,7 +10,12 @@
 
     <div class="game-container">
         
+        <!-- 📊 STATS & TOTAL TIME -->
         <header class="stats-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; uppercase; color: var(--text-muted);">Session Globale :</span>
+                <span id="total-session-time" style="font-weight: bold; color: var(--color-positif); font-size: 0.9rem;">00:00</span>
+            </div>
             <div class="stat-box energy-group">
                 <div class="stat-label">Énergie <span id="energy-val">0</span>/15</div>
                 <div class="progress-bar-container">
@@ -31,6 +36,7 @@
             </div>
         </header>
 
+        <!-- 🎴 ZONE CENTRALE -->
         <main class="game-board" id="game-board">
             <div id="start-screen">
                 <h1 style="font-size: 2rem; margin-bottom: 20px; text-align: center; letter-spacing: 2px;">CYBER CONTROL</h1>
@@ -43,6 +49,7 @@
             </div>
         </main>
 
+        <!-- ⏱️ CHRONO OVERLAY -->
         <div class="overlay-timer hidden" id="timer-screen">
             <h1 class="timer-card-title" id="active-card-name">-</h1>
             <div class="countdown" id="countdown-display">00:00</div>
