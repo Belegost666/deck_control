@@ -9,8 +9,8 @@ const BASE_CARDS = [
     // ❄️ Refroidissement (Présentes x2)
     { type: 'refroidissement', title: 'Contrôle Absolu', cost: 3, time: 240, energy: 1, temp: -20, effect: null },
     { type: 'refroidissement', title: 'Ralentisseur', cost: 2, time: 180, energy: 1, temp: -10, effect: null },
-    { type: 'refroidissement', title: 'Cryogénie Passive', cost: 3, time: 300, energy: 0, temp: -40, effect: null },
-    { type: 'refroidissement', title: 'Inertie Thermique', cost: 3, time: 300, energy: 2, temp: -25, effect: null },
+    { type: 'refroidissement', title: 'Cryogénie Passive', cost: 3, time: 360, energy: 0, temp: -50, effect: null },
+    { type: 'refroidissement', title: 'Inertie Thermique', cost: 4, time: 300, energy: 2, temp: -25, effect: null },
     { type: 'refroidissement', title: 'Bain de Glace', cost: 1, time: 60, energy: 0, temp: -10, effect: null },
 
     // ⚡ Positif / Générateurs (Présentes x1 — Seulement ces 4 cartes uniques)
