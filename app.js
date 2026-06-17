@@ -1,25 +1,20 @@
-// Équilibrage du Deck avec les cartes de recharge à coût 0 Mana / +Température
 const BASE_CARDS = [
-    // 🔥 Surchauffe (Présentes x2)
     { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 2, temp: 20, effect: null },
     { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 3, temp: 35, effect: null },
     { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 180, energy: 5, temp: 50, effect: null },
     { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 2, time: 30, energy: 1, temp: 15, effect: null },
     { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 3, temp: 40, effect: null },
 
-    // ❄️ Refroidissement (Présentes x2)
     { type: 'refroidissement', title: 'Contrôle Absolu', cost: 2, time: 240, energy: 1, temp: -30, effect: null },
     { type: 'refroidissement', title: 'Ralentisseur', cost: 2, time: 180, energy: 1, temp: -15, effect: null },
     { type: 'refroidissement', title: 'Cryogénie Passive', cost: 3, time: 300, energy: 0, temp: -45, effect: null },
     { type: 'refroidissement', title: 'Inertie Thermique', cost: 3, time: 300, energy: 2, temp: -25, effect: null },
     { type: 'refroidissement', title: 'Bain de Glace', cost: 1, time: 60, energy: 0, temp: -10, effect: null },
 
-    // ⚡ Générateurs de Mana (Coût 0 Mana, mais coût en Température !)
     { type: 'positif', title: 'Puits de Mana', cost: 0, time: 180, energy: 0, temp: 10, effect: 'gain_mana_3' },
     { type: 'positif', title: 'Alchimie Interne', cost: 0, time: 300, energy: 2, temp: 25, effect: 'gain_mana_5' },
     { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 10, effect: 'geler_temp' },
 
-    // ⚠️ Malus / Pièges (Présentes x1)
     { type: 'malus', title: 'Surchauffe Interne', cost: 0, time: 60, energy: 0, temp: 25, effect: null },
     { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 240, energy: 0, temp: -10, effect: null },
     { type: 'malus', title: 'Fuite de Mana', cost: 0, time: 120, energy: 1, temp: 10, effect: 'perte_mana_2' },
@@ -75,8 +70,8 @@ function getEffectLabel(card) {
     if (!card.effect) return coreText || 'Aucun effet';
 
     switch(card.effect) {
-        case 'gain_mana_3': return coreText + "⚡ +3 Mana (Dépassement Max)";
-        case 'gain_mana_5': return coreText + "⚡ +5 Mana (Dépassement Max)";
+        case 'gain_mana_3': return coreText + "⚡ +3 Mana";
+        case 'gain_mana_5': return coreText + "⚡ +5 Mana";
         case 'geler_temp': return coreText + "❄️ Gèle Temp.";
         case 'perte_mana_2': return coreText + "❌ -2 Mana";
         case 'perte_max_mana_1': return coreText + "📉 -1 Max Mana";
@@ -98,7 +93,6 @@ function drawRound() {
         renderCards(true);
         document.getElementById('game-instruction').innerText = "⚠️ PIÈGE ! Cliquez sur la carte pour la subir";
     } else {
-        // Soft lock check
         const canAffordAny = gameState.currentOptions.some(c => gameState.mana >= c.cost);
         if (!canAffordAny && gameState.energy < gameState.maxEnergy) {
             triggerEnd(false, "Panne sèche. Plus assez de mana pour continuer.");
@@ -148,6 +142,8 @@ function executeCard(card) {
     }
 
     gameState.mana -= card.cost;
+    // Ajout direct de l'intégralité du temps de la carte au compteur global dès sa validation
+    gameState.totalSessionSeconds += card.time; 
     updateUI();
 
     const timerScreen = document.getElementById('timer-screen');
@@ -159,9 +155,7 @@ function executeCard(card) {
 
     gameState.timerInterval = setInterval(() => {
         timeLeft--;
-        gameState.totalSessionSeconds++;
         updateTimerDisplay(timeLeft);
-        updateUI();
 
         if (timeLeft <= 0) {
             clearInterval(gameState.timerInterval);
@@ -196,7 +190,6 @@ function applyResults() {
         if (gameState.temperature < 0) gameState.temperature = 0;
     }
 
-    // Application des effets (Le mana peut désormais dépasser le max !)
     if (card.effect) {
         if (card.effect === 'gain_mana_3') gameState.mana += 3;
         if (card.effect === 'gain_mana_5') gameState.mana += 5;
@@ -239,7 +232,6 @@ function updateUI() {
     document.getElementById('mana-val').innerText = gameState.mana;
     document.getElementById('mana-max').innerText = gameState.manaMax;
     
-    // Rendu graphique des dots de mana (limité au manaMax pour ne pas casser la mise en page, mais la valeur textuelle affiche le vrai nombre au-dessus de 15)
     const dots = document.getElementById('mana-dots-container');
     dots.innerHTML = '';
     const visibleDots = Math.min(gameState.mana, gameState.manaMax);
