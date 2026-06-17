@@ -1,29 +1,29 @@
 const BASE_CARDS = [
     // 🔥 Surchauffe (Présentes x2)
-    { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 3, temp: 20, effect: null },
-    { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 4, temp: 30, effect: null },
-    { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 180, energy: 5, temp: 40, effect: null },
-    { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 2, time: 30, energy: 3, temp: 30, effect: null },
-    { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 4, temp: 40, effect: null },
+    { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 3, temp: 10, effect: null },
+    { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 4, temp: 20, effect: null },
+    { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 180, energy: 5, temp: 30, effect: null },
+    { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 1, time: 30, energy: 2, temp: 10, effect: null },
+    { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 4, temp: 30, effect: null },
 
     // ❄️ Refroidissement (Présentes x2)
     { type: 'refroidissement', title: 'Contrôle Absolu', cost: 3, time: 240, energy: 1, temp: -20, effect: null },
-    { type: 'refroidissement', title: 'Ralentisseur', cost: 2, time: 180, energy: 1, temp: -10, effect: null },
-    { type: 'refroidissement', title: 'Cryogénie Passive', cost: 3, time: 360, energy: 0, temp: -50, effect: null },
-    { type: 'refroidissement', title: 'Inertie Thermique', cost: 4, time: 300, energy: 2, temp: -25, effect: null },
-    { type: 'refroidissement', title: 'Bain de Glace', cost: 1, time: 60, energy: 0, temp: -10, effect: null },
+    { type: 'refroidissement', title: 'Ralentisseur', cost: 3, time: 180, energy: 1, temp: -10, effect: null },
+    { type: 'refroidissement', title: 'Cryogénie Passive', cost: 1, time: 360, energy: 1, temp: -50, effect: null },
+    { type: 'refroidissement', title: 'Inertie Thermique', cost: 2, time: 300, energy: 2, temp: -30, effect: null },
+    { type: 'refroidissement', title: 'Bain de Glace', cost: 4, time: 60, energy: 0, temp: -10, effect: null },
 
     // ⚡ Positif / Générateurs (Présentes x1 — Seulement ces 4 cartes uniques)
     { type: 'positif', title: 'Puits de Mana', cost: 0, time: 180, energy: 1, temp: 10, effect: 'gain_mana_3' },
     { type: 'positif', title: 'Alchimie Interne', cost: 0, time: 300, energy: 2, temp: 20, effect: 'gain_mana_5' },
     { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 0, effect: 'geler_temp' },
-    { type: 'positif', title: 'Second Souffle', cost: 0, time: 30, energy: 1, temp: -10, effect: 'gain_mana_1' },
+    { type: 'positif', title: 'Second Souffle', cost: 0, time: 30, energy: 0, temp: -10, effect: 'gain_mana_1' },
 
     // ⚠️ Malus / Pièges (Présentes x1)
     { type: 'malus', title: 'Surchauffe Interne', cost: 0, time: 60, energy: 0, temp: 30, effect: null },
-    { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 240, energy: -1, temp: 10, effect: null },
-    { type: 'malus', title: 'Fuite de Mana', cost: 0, time: 120, energy: 1, temp: 10, effect: 'perte_mana_2' },
-    { type: 'malus', title: 'Combustion Spontanée', cost: 0, time: 30, energy: -1, temp: 20, effect: null }
+    { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 360, energy: 0, temp: 20, effect: null },
+    { type: 'malus', title: 'Fuite de Mana', cost: 0, time: 120, energy: 0, temp: 0, effect: 'perte_mana_2' },
+    { type: 'malus', title: 'Combustion Spontanée', cost: 0, time: 30, energy: 0, temp: 40, effect: null }
 ];
 
 let gameState = {
