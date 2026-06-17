@@ -1,25 +1,20 @@
-// Liste de base : Les Surchauffes et Refroidissements seront dupliqués à l'initialisation
 const BASE_CARDS = [
-    // 🔥 Surchauffe (Seront présentes x2)
     { type: 'surchauffe', title: 'Pulsion Subite', cost: 2, time: 60, energy: 2, temp: 20, effect: null },
     { type: 'surchauffe', title: 'Friction Électrique', cost: 3, time: 120, energy: 3, temp: 35, effect: null },
     { type: 'surchauffe', title: 'Zone Critique', cost: 4, time: 180, energy: 5, temp: 50, effect: null },
     { type: 'surchauffe', title: 'Court-Circuit Volontaire', cost: 2, time: 30, energy: 1, temp: 15, effect: null },
     { type: 'surchauffe', title: 'Effet de Serre', cost: 3, time: 180, energy: 3, temp: 40, effect: null },
 
-    // ❄️ Refroidissement (Seront présentes x2)
     { type: 'refroidissement', title: 'Contrôle Absolu', cost: 2, time: 240, energy: 1, temp: -30, effect: null },
     { type: 'refroidissement', title: 'Ralentisseur', cost: 2, time: 180, energy: 1, temp: -15, effect: null },
     { type: 'refroidissement', title: 'Cryogénie Passive', cost: 3, time: 300, energy: 0, temp: -45, effect: null },
     { type: 'refroidissement', title: 'Inertie Thermique', cost: 3, time: 300, energy: 2, temp: -25, effect: null },
     { type: 'refroidissement', title: 'Bain de Glace', cost: 1, time: 60, energy: 0, temp: -10, effect: null },
 
-    // 🛡️ Effets Positifs (Unique x1)
     { type: 'positif', title: 'Puits de Mana', cost: 4, time: 180, energy: 0, temp: 0, effect: 'gain_mana_6' },
     { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 10, effect: 'geler_temp' },
     { type: 'positif', title: 'Alchimie Interne', cost: 5, time: 300, energy: 2, temp: -15, effect: 'gain_mana_7' },
 
-    // ⚠️ Malus / Pièges (Unique x1)
     { type: 'malus', title: 'Surchauffe Interne', cost: 0, time: 60, energy: 0, temp: 25, effect: null },
     { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 240, energy: 0, temp: -10, effect: null },
     { type: 'malus', title: 'Fuite de Mana', cost: 0, time: 120, energy: 1, temp: 10, effect: 'perte_mana_2' },
@@ -30,7 +25,8 @@ let gameState = {
     energy: 0, maxEnergy: 15,
     temperature: 30, maxTemperature: 100,
     mana: 15, manaMax: 15, isTempFrozen: false,
-    deck: [], currentOptions: [], activeCard: null, timerInterval: null
+    deck: [], currentOptions: [], activeCard: null, timerInterval: null,
+    totalSessionSeconds: 0 // Compteur de temps global accumulé
 };
 
 function startGame() {
@@ -42,35 +38,47 @@ function startGame() {
     gameState.manaMax = 15;
     gameState.mana = 15;
     gameState.isTempFrozen = false;
+    gameState.totalSessionSeconds = 0;
     
     rebuildDeck();
     updateUI();
     drawRound();
 }
 
-// Construit le paquet réglementaire de 27 cartes (Surchauffe x2, Refroidissement x2)
 function rebuildDeck() {
     let newDeck = [];
     let currentId = 1;
 
     BASE_CARDS.forEach(cardTemplate => {
         if (cardTemplate.type === 'surchauffe' || cardTemplate.type === 'refroidissement') {
-            // Ajouter deux fois la carte
             newDeck.push({ ...cardTemplate, id: currentId++ });
             newDeck.push({ ...cardTemplate, id: currentId++ });
         } else {
-            // Ajouter une seule fois (Positifs et Pièges)
             newDeck.push({ ...cardTemplate, id: currentId++ });
         }
     });
 
-    // Mélange de Fischer-Yates
     for (let i = newDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
     }
-
     gameState.deck = newDeck;
+}
+
+// Renvoie une chaîne lisible décrivant les effets secondaires
+function getEffectLabel(card) {
+    if (!card.effect) {
+        return card.temp !== 0 ? `${card.temp > 0 ? '+' : ''}${card.temp}°C` : 'Aucun effet';
+    }
+    let coreText = card.temp !== 0 ? `${card.temp > 0 ? '+' : ''}${card.temp}°C<br>` : '';
+    switch(card.effect) {
+        case 'gain_mana_6': return coreText + "+6 Mana";
+        case 'gain_mana_7': return coreText + "+7 Mana";
+        case 'geler_temp': return coreText + "Gèle Temp.";
+        case 'perte_mana_2': return coreText + "-2 Mana";
+        case 'perte_max_mana_1': return coreText + "-1 Max Mana";
+        default: return coreText;
+    }
 }
 
 function drawRound() {
@@ -85,9 +93,15 @@ function drawRound() {
         
         gameState.currentOptions = [malusCard];
         renderCards(true);
-        document.getElementById('game-instruction').innerText = "⚠️ PIÈGE AUTOMATIQUE !";
-        setTimeout(() => executeCard(malusCard), 1500);
+        document.getElementById('game-instruction').innerText = "⚠️ PIÈGE ! Cliquez sur la carte pour la subir";
     } else {
+        // Soft lock check : Le joueur a-t-il les moyens de jouer au moins une des cartes ?
+        const canAffordAny = gameState.currentOptions.some(c => gameState.mana >= c.cost);
+        if (!canAffordAny && gameState.energy < gameState.maxEnergy) {
+            triggerEnd(false, "Panne sèche. Plus assez de mana pour continuer.");
+            return;
+        }
+
         document.getElementById('game-instruction').innerText = "Sélectionnez votre action :";
         renderCards(false);
     }
@@ -106,16 +120,16 @@ function renderCards(isMalusForced) {
         const sec = card.time % 60;
 
         cardEl.innerHTML = `
-            <div class="card-cost">${card.type === 'malus' ? 'PIÈGE' : card.cost + ' MANA'}</div>
+            <div class="card-cost">${card.type === 'malus' ? '⚠️ DANGER' : card.cost + ' MANA'}</div>
             <h2 class="card-title">${card.title}</h2>
             <div class="card-stats">
                 <span>⏱️ ${min}:${sec < 10 ? '0' : ''}${sec}</span>
                 <span>⚡ +${card.energy} Énergie</span>
             </div>
-            <div class="card-effect">${card.temp > 0 ? '+' : ''}${card.temp}°C</div>
+            <div class="card-effect">${getEffectLabel(card)}</div>
         `;
 
-        if (canAfford && !isMalusForced) {
+        if (isMalusForced || canAfford) {
             cardEl.onclick = () => executeCard(card);
         }
         container.appendChild(cardEl);
@@ -142,7 +156,9 @@ function executeCard(card) {
 
     gameState.timerInterval = setInterval(() => {
         timeLeft--;
+        gameState.totalSessionSeconds++; // Le temps global progresse à chaque seconde écoulée
         updateTimerDisplay(timeLeft);
+        updateUI();
 
         if (timeLeft <= 0) {
             clearInterval(gameState.timerInterval);
@@ -159,7 +175,9 @@ function updateTimerDisplay(time) {
 }
 
 function skipTimer() {
-    if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+    if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+    }
     document.getElementById('timer-screen').classList.add('hidden');
     applyResults();
 }
@@ -192,7 +210,7 @@ function applyResults() {
     updateUI();
 
     if (gameState.temperature >= gameState.maxTemperature) {
-        triggerEnd(false);
+        triggerEnd(false, "Surchauffe critique du système.");
     } else if (gameState.energy >= gameState.maxEnergy) {
         triggerEnd(true);
     } else {
@@ -200,7 +218,14 @@ function applyResults() {
     }
 }
 
+function formatTotalTime(totalSeconds) {
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+    return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
 function updateUI() {
+    document.getElementById('total-session-time').innerText = formatTotalTime(gameState.totalSessionSeconds);
     document.getElementById('energy-val').innerText = gameState.energy;
     document.getElementById('energy-bar').style.width = `${(gameState.energy / gameState.maxEnergy) * 100}%`;
 
@@ -221,11 +246,27 @@ function updateUI() {
     }
 }
 
-function triggerEnd(victory) {
+function triggerEnd(victory, reason = "") {
     const board = document.getElementById('game-board');
+    const finalTimeStr = formatTotalTime(gameState.totalSessionSeconds);
+    
     if (victory) {
-        board.innerHTML = `<div style="text-align:center;"><h2>⚡ VICTOIRE </h2><p style="margin:15px 0;">Seuil atteint. Autorisation de jouir accordée.</p><button class="menu-btn" onclick="window.location.reload()">Rejouer</button></div>`;
+        board.innerHTML = `
+            <div style="text-align:center; padding-top: 20px;">
+                <h2>⚡ VICTOIRE </h2>
+                <p style="margin:10px 0; color: var(--text-muted);">Temps de stimulation : <strong>${finalTimeStr}</strong></p>
+                <p style="margin:15px 0;">Seuil atteint. Autorisation de jouir accordée.</p>
+                <button class="menu-btn" onclick="window.location.reload()">Rejouer</button>
+            </div>`;
     } else {
-        board.innerHTML = `<div style="text-align:center;"><h2>💥 DEFAITE</h2><p style="margin:15px 0;">Surchauffe. Interdiction formelle de jouir.</p><button class="menu-btn" onclick="window.location.reload()">Réessayer</button></div>`;
+        const detail = reason ? `<p style="color: var(--color-malus); margin-bottom: 5px;">${reason}</p>` : '';
+        board.innerHTML = `
+            <div style="text-align:center; padding-top: 20px;">
+                <h2>💥 DÉFAITE</h2>
+                <p style="margin:10px 0; color: var(--text-muted);">Temps cumulé : <strong>${finalTimeStr}</strong></p>
+                ${detail}
+                <p style="margin:15px 0; font-weight: bold;">Interdiction formelle de jouir.</p>
+                <button class="menu-btn" onclick="window.location.reload()">Réessayer</button>
+            </div>`;
     }
 }
