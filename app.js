@@ -15,15 +15,15 @@ const BASE_CARDS = [
 
     // ⚡ Positif / Générateurs (Présentes x1 — Seulement ces 4 cartes uniques)
     { type: 'positif', title: 'Puits de Mana', cost: 0, time: 180, energy: 1, temp: 10, effect: 'gain_mana_3' },
-    { type: 'positif', title: 'Alchimie Interne', cost: 0, time: 300, energy: 3, temp: 25, effect: 'gain_mana_5' },
-    { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 10, effect: 'geler_temp' },
-    { type: 'positif', title: 'Second Souffle', cost: 0, time: 30, energy: 1, temp: -5, effect: 'gain_mana_1' },
+    { type: 'positif', title: 'Alchimie Interne', cost: 0, time: 300, energy: 2, temp: 20, effect: 'gain_mana_5' },
+    { type: 'positif', title: 'Isolation Thermique', cost: 4, time: 120, energy: 1, temp: 0, effect: 'geler_temp' },
+    { type: 'positif', title: 'Second Souffle', cost: 0, time: 30, energy: 1, temp: -10, effect: 'gain_mana_1' },
 
     // ⚠️ Malus / Pièges (Présentes x1)
-    { type: 'malus', title: 'Surchauffe Interne', cost: 0, time: 60, energy: 0, temp: 25, effect: null },
-    { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 240, energy: 0, temp: -10, effect: null },
+    { type: 'malus', title: 'Surchauffe Interne', cost: 0, time: 60, energy: 0, temp: 30, effect: null },
+    { type: 'malus', title: 'L\'Épreuve d\'Endurance', cost: 0, time: 240, energy: -1, temp: 10, effect: null },
     { type: 'malus', title: 'Fuite de Mana', cost: 0, time: 120, energy: 1, temp: 10, effect: 'perte_mana_2' },
-    { type: 'malus', title: 'Combustion Spontanée', cost: 0, time: 30, energy: 0, temp: 15, effect: 'perte_max_mana_1' }
+    { type: 'malus', title: 'Combustion Spontanée', cost: 0, time: 30, energy: -1, temp: 20, effect: null }
 ];
 
 let gameState = {
