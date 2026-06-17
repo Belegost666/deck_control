@@ -31,10 +31,12 @@ let gameState = {
     temperature: 30, maxTemperature: 100,
     mana: 15, manaMax: 15, isTempFrozen: false,
     deck: [], 
-    hand: [], // Contient les 3 cartes actuelles du joueur
+    hand: [], 
     activeCard: null, timerInterval: null,
     totalSessionSeconds: 0,
-    streakType: null, streakCount: 0
+    streakType: null, streakCount: 0,
+    forcedDefeatTime: false,
+    forcedDefeatReason: "" // Enregistre la cause pour l'afficher après le chrono
 };
 
 const STREAK_THRESHOLD = 3;
@@ -54,12 +56,24 @@ function startGame() {
     gameState.streakType = null;
     gameState.streakCount = 0;
     gameState.hand = [];
+    gameState.forcedDefeatTime = false;
+    gameState.forcedDefeatReason = "";
     
     rebuildDeck();
-    updateUI();
     
-    // Remplir la main initiale avec 3 cartes valides
+    // Premier tirage sécurisé sans malus
+    let malusSaved = gameState.deck.filter(c => c.type === 'malus');
+    gameState.deck = gameState.deck.filter(c => c.type !== 'malus');
+    
     fillHand();
+    
+    gameState.deck = gameState.deck.concat(malusSaved);
+    for (let i = gameState.deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
+    }
+
+    updateUI();
     renderHand();
 }
 
@@ -83,7 +97,6 @@ function rebuildDeck() {
     gameState.deck = newDeck;
 }
 
-// Pioche des cartes jusqu'à en avoir 3 en main. Si un malus est pioché, il s'applique immédiatement.
 function fillHand() {
     while (gameState.hand.length < 3) {
         if (gameState.deck.length === 0) rebuildDeck();
@@ -92,7 +105,6 @@ function fillHand() {
         
         if (drawnCard.type === 'malus') {
             applyMalusImmediately(drawnCard);
-            // Si le malus a causé une défaite, on arrête tout
             if (gameState.temperature >= gameState.maxTemperature) return;
         } else {
             gameState.hand.push(drawnCard);
@@ -101,7 +113,6 @@ function fillHand() {
 }
 
 function applyMalusImmediately(card) {
-    // Applique directement les effets du piège
     gameState.temperature += card.temp;
     gameState.totalSessionSeconds += card.time;
 
@@ -110,8 +121,6 @@ function applyMalusImmediately(card) {
     }
 
     updateUI();
-    
-    // Alerte flash optionnelle pour notifier le joueur qu'un piège s'est déclenché
     showMalusFlash(card);
 }
 
@@ -146,10 +155,41 @@ function getEffectLabel(card) {
 }
 
 function renderHand() {
-    // Vérification de la condition de défaite par manque de mana avant d'afficher la main
-    const canAffordAny = gameState.hand.some(c => gameState.mana >= c.cost);
-    if (!canAffordAny && gameState.energy < gameState.maxEnergy) {
-        triggerEnd(false, "Panne sèche. Plus assez de mana pour jouer la moindre carte.");
+    // Si la victoire est déjà acquise par un effet ou une jauge pleine, on ne calcule pas d'impasse
+    if (gameState.energy >= gameState.maxEnergy) {
+        triggerEnd(true);
+        return;
+    }
+
+    // Analyse de viabilité des cartes en main
+    // Une carte est "valide" si on a assez de mana ET qu'elle ne nous fait pas exploser thermiquement (sauf si gelée)
+    const playableCards = gameState.hand.filter(card => {
+        const canAfford = gameState.mana >= card.cost;
+        const willOverheat = !gameState.isTempFrozen && (gameState.temperature + card.temp >= gameState.maxTemperature);
+        return canAfford && !willOverheat;
+    });
+
+    // SCÉNARIO IMPASSE / DÉFAITE INÉVITABLE (Aucune carte n'est jouable sans perdre ou bloquer)
+    if (playableCards.length === 0) {
+        // On prend la carte la plus longue parmi les 3 de la main pour maximiser le gage
+        let worstCard = gameState.hand.reduce((max, card) => card.time > max.time ? card : max, gameState.hand[0]);
+        
+        // Détermination de la cause principale de la défaite pour l'affichage final
+        if (gameState.mana < worstCard.cost) {
+            gameState.forcedDefeatReason = "Panne sèche. Plus assez de mana pour continuer.";
+            document.getElementById('game-instruction').innerText = "⚠️ PANNE SÈCHE ! Le système coupe les circuits. Ordre final...";
+        } else {
+            gameState.forcedDefeatReason = "Surchauffe critique du système.";
+            document.getElementById('game-instruction').innerText = "⚠️ SURCHAUFFE INÉVITABLE ! Surcharge thermique imminente. Ordre final...";
+        }
+        
+        document.getElementById('game-instruction').style.color = 'var(--color-malus)';
+        
+        // Délai de 2.5 secondes pour que le joueur réalise l'impasse, puis activation du chrono punitif
+        setTimeout(() => {
+            gameState.forcedDefeatTime = true;
+            executeCard(worstCard);
+        }, 2500);
         return;
     }
 
@@ -158,8 +198,13 @@ function renderHand() {
 
     gameState.hand.forEach(card => {
         const cardEl = document.createElement('div');
+        
+        // Pour l'affichage visuel individuel des cartes :
         const canAfford = gameState.mana >= card.cost;
-        cardEl.className = `card ${card.type} ${!canAfford ? 'disabled' : ''}`;
+        const willOverheat = !gameState.isTempFrozen && (gameState.temperature + card.temp >= gameState.maxTemperature);
+        const isCardDisabled = !canAfford || willOverheat;
+
+        cardEl.className = `card ${card.type} ${isCardDisabled ? 'disabled' : ''}`;
 
         const min = Math.floor(card.time / 60);
         const sec = card.time % 60;
@@ -174,7 +219,8 @@ function renderHand() {
             <div class="card-effect">${getEffectLabel(card)}</div>
         `;
 
-        if (canAfford) {
+        // Le joueur ne peut cliquer que sur les cartes qui ne provoquent pas une défaite immédiate
+        if (!isCardDisabled) {
             cardEl.onclick = () => executeCard(card);
         }
         container.appendChild(cardEl);
@@ -183,11 +229,12 @@ function renderHand() {
 
 function executeCard(card) {
     gameState.activeCard = card;
-
-    // Retire la carte jouée de la main
     gameState.hand = gameState.hand.filter(c => c.id !== card.id);
 
-    gameState.mana -= card.cost;
+    if (gameState.mana >= card.cost) {
+        gameState.mana -= card.cost;
+    }
+    
     gameState.totalSessionSeconds += card.time; 
     updateUI();
 
@@ -223,6 +270,12 @@ function skipTimer() {
 }
 
 function applyResults() {
+    // Si on était dans l'impasse forcée, le temps imparti est fini : la défaite tombe immédiatement
+    if (gameState.forcedDefeatTime) {
+        triggerEnd(false, gameState.forcedDefeatReason);
+        return;
+    }
+
     const card = gameState.activeCard;
     if (!card) return;
 
@@ -245,7 +298,6 @@ function applyResults() {
     let streakMessage = updateStreak(card);
     gameState.activeCard = null;
 
-    // Remplir à nouveau la main à 3 cartes (déclenchera les malus s'il y en a)
     fillHand();
     updateUI();
 
